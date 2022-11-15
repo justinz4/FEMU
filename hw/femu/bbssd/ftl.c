@@ -525,52 +525,52 @@ static uint64_t ssd_advance_status(struct ssd *ssd, struct ppa *ppa, struct
 }
 
 /* update SSD status about one page from PG_VALID -> PG_VALID */
-static void mark_page_invalid(struct ssd *ssd, struct ppa *ppa)
+/*static void mark_page_invalid(struct ssd *ssd, struct ppa *ppa)
 {
     struct line_mgmt *lm = &ssd->lm;
     struct ssdparams *spp = &ssd->sp;
     struct nand_block *blk = NULL;
     struct nand_page *pg = NULL;
     bool was_full_line = false;
-    struct line *line;
+    struct line *line;*/
 
     /* update corresponding page status */
-    pg = get_pg(ssd, ppa);
+ /*   pg = get_pg(ssd, ppa);
     ftl_assert(pg->status == PG_VALID);
-    pg->status = PG_INVALID;
+    pg->status = PG_INVALID;*/
 
     /* update corresponding block status */
-    blk = get_blk(ssd, ppa);
+    /*blk = get_blk(ssd, ppa);
     ftl_assert(blk->ipc >= 0 && blk->ipc < spp->pgs_per_blk);
     blk->ipc++;
     ftl_assert(blk->vpc > 0 && blk->vpc <= spp->pgs_per_blk);
-    blk->vpc--;
+    blk->vpc--;*/
 
     /* update corresponding line status */
-    line = get_line(ssd, ppa);
+    /*line = get_line(ssd, ppa);
     ftl_assert(line->ipc >= 0 && line->ipc < spp->pgs_per_line);
     if (line->vpc == spp->pgs_per_line) {
         ftl_assert(line->ipc == 0);
         was_full_line = true;
     }
     line->ipc++;
-    ftl_assert(line->vpc > 0 && line->vpc <= spp->pgs_per_line);
+    ftl_assert(line->vpc > 0 && line->vpc <= spp->pgs_per_line);*/
     /* Adjust the position of the victime line in the pq under over-writes */
-    if (line->pos) {
+    /*if (line->pos) {*/
         /* Note that line->vpc will be updated by this call */
-        pqueue_change_priority(lm->victim_line_pq, line->vpc - 1, line);
+        /*pqueue_change_priority(lm->victim_line_pq, line->vpc - 1, line);
     } else {
         line->vpc--;
     }
 
-    if (was_full_line) {
+    if (was_full_line) {*/
         /* move line: "full" -> "victim" */
-        QTAILQ_REMOVE(&lm->full_line_list, line, entry);
+        /*QTAILQ_REMOVE(&lm->full_line_list, line, entry);
         lm->full_line_cnt--;
         pqueue_insert(lm->victim_line_pq, line);
         lm->victim_line_cnt++;
     }
-}
+}*/
 
 static void mark_page_valid(struct ssd *ssd, struct ppa *ppa)
 {
@@ -813,38 +813,40 @@ static uint64_t ssd_write(struct ssd *ssd, NvmeRequest *req)
     struct ppa ppa;
     uint64_t lpn;
     uint64_t curlat = 0, maxlat = 0;
-    int r;
+    // int r;
 
     if (end_lpn >= spp->tt_pgs) {
         ftl_err("start_lpn=%"PRIu64",tt_pgs=%d\n", start_lpn, ssd->sp.tt_pgs);
     }
 
-    while (should_gc_high(ssd)) {
-        /* perform GC here until !should_gc(ssd) */
+    /* while (should_gc_high(ssd)) {
+        // perform GC here until !should_gc(ssd) 
         r = do_gc(ssd, true);
         if (r == -1)
             break;
-    }
+    }*/
 
     for (lpn = start_lpn; lpn <= end_lpn; lpn++) {
-        ppa = get_maptbl_ent(ssd, lpn);
-        if (mapped_ppa(&ppa)) {
+        //ppa = get_maptbl_ent(ssd, lpn);
+        //if (mapped_ppa(&ppa)) {
             /* update old page information first */
-            mark_page_invalid(ssd, &ppa);
-            set_rmap_ent(ssd, INVALID_LPN, &ppa);
-        }
+            // mark_page_invalid(ssd, &ppa);
+            //set_rmap_ent(ssd, INVALID_LPN, &ppa);
+        //}
 
         /* new write */
-        ppa = get_new_page(ssd);
+        // ppa = get_new_page(ssd);
+	ppa.ppa = lpn;
+	// ppa = lpn;
         /* update maptbl */
-        set_maptbl_ent(ssd, lpn, &ppa);
+        //set_maptbl_ent(ssd, lpn, &ppa);
         /* update rmap */
-        set_rmap_ent(ssd, lpn, &ppa);
+        //set_rmap_ent(ssd, lpn, &ppa);
 
         mark_page_valid(ssd, &ppa);
 
         /* need to advance the write pointer here */
-        ssd_advance_write_pointer(ssd);
+        //ssd_advance_write_pointer(ssd);
 
         struct nand_cmd swr;
         swr.type = USER_IO;
