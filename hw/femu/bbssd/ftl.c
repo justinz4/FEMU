@@ -1,6 +1,10 @@
 #include "ftl.h"
 
+#include "../fs/etd_fs_structs.h"
+
 //#define FEMU_DEBUG_FTL
+
+etd_fd_t zodiac_fd_arry[MAX_FILES];
 
 static void *ftl_thread(void *arg);
 
@@ -453,6 +457,37 @@ static inline struct nand_page *get_pg(struct ssd *ssd, struct ppa *ppa)
     return &(blk->pg[ppa->g.pg]);
 }
 
+static uint64_t ssd_fs_status(bool is_write) {
+	uint64_t lat = 0;
+
+	if(is_write) {
+		// need to do GC
+		// GC = page remapping -> multiple inode lookup -> how many things?
+		lat += NAND_READ_LATENCY;
+
+		// start at root dir, lookup dir
+		lat += NAND_READ_LATENCY;
+
+		// lookup inode in dir
+		lat += NAND_READ_LATENCY;
+
+		// lookup block in inodr
+		lat += NAND_READ_LATENCY;
+	} else {
+		// start at root dir, lookup dir
+		lat += NAND_READ_LATENCY;
+
+		// lookup inode in dir
+		lat += NAND_READ_LATENCY;
+
+		// lookup block in inodr
+		lat += NAND_READ_LATENCY;
+	}
+
+	return lat;
+
+}
+
 static uint64_t ssd_advance_status(struct ssd *ssd, struct ppa *ppa, struct
         nand_cmd *ncmd)
 {
@@ -467,10 +502,12 @@ static uint64_t ssd_advance_status(struct ssd *ssd, struct ppa *ppa, struct
     switch (c) {
     case NAND_READ:
         /* read: perform NAND cmd first */
-        nand_stime = (lun->next_lun_avail_time < cmd_stime) ? cmd_stime : \
-                     lun->next_lun_avail_time;
+        //nand_stime = (lun->next_lun_avail_time < cmd_stime) ? cmd_stime :
+                     //lun->next_lun_avail_time;
+	nand_stime = cmd_stime; // don't care about lun times
         lun->next_lun_avail_time = nand_stime + spp->pg_rd_lat;
         lat = lun->next_lun_avail_time - cmd_stime;
+	lat += ssd_fs_status(0);
 #if 0
         lun->next_lun_avail_time = nand_stime + spp->pg_rd_lat;
 
@@ -485,14 +522,16 @@ static uint64_t ssd_advance_status(struct ssd *ssd, struct ppa *ppa, struct
 
     case NAND_WRITE:
         /* write: transfer data through channel first */
-        nand_stime = (lun->next_lun_avail_time < cmd_stime) ? cmd_stime : \
-                     lun->next_lun_avail_time;
+        // nand_stime = (lun->next_lun_avail_time < cmd_stime) ? cmd_stime :
+                     //lun->next_lun_avail_time;
+	nand_stime = cmd_stime; // don't care about lun times
         if (ncmd->type == USER_IO) {
             lun->next_lun_avail_time = nand_stime + spp->pg_wr_lat;
         } else {
             lun->next_lun_avail_time = nand_stime + spp->pg_wr_lat;
         }
         lat = lun->next_lun_avail_time - cmd_stime;
+	lat += ssd_fs_status(1);
 
 #if 0
         chnl_stime = (ch->next_ch_avail_time < cmd_stime) ? cmd_stime : \
@@ -510,8 +549,9 @@ static uint64_t ssd_advance_status(struct ssd *ssd, struct ppa *ppa, struct
 
     case NAND_ERASE:
         /* erase: only need to advance NAND status */
-        nand_stime = (lun->next_lun_avail_time < cmd_stime) ? cmd_stime : \
-                     lun->next_lun_avail_time;
+        //nand_stime = (lun->next_lun_avail_time < cmd_stime) ? cmd_stime :
+                     //lun->next_lun_avail_time;
+	nand_stime = cmd_stime;
         lun->next_lun_avail_time = nand_stime + spp->blk_er_lat;
 
         lat = lun->next_lun_avail_time - cmd_stime;
@@ -767,7 +807,7 @@ static int do_gc(struct ssd *ssd, bool force)
     return 0;
 }
 
-static uint64_t ssd_read(struct ssd *ssd, NvmeRequest *req)
+static uint64_t ssd_read_helper(struct ssd *ssd, NvmeRequest *req)
 {
     struct ssdparams *spp = &ssd->sp;
     uint64_t lba = req->slba;
@@ -803,7 +843,12 @@ static uint64_t ssd_read(struct ssd *ssd, NvmeRequest *req)
     return maxlat;
 }
 
-static uint64_t ssd_write(struct ssd *ssd, NvmeRequest *req)
+static uint64_t ssd_read(struct ssd *ssd, NvmeRequest *req) {
+	uint64_t maxlat = ssd_read_helper(ssd, req);
+	return maxlat;
+}
+
+static uint64_t ssd_write_helper(struct ssd *ssd, NvmeRequest *req)
 {
     uint64_t lba = req->slba;
     struct ssdparams *spp = &ssd->sp;
@@ -856,6 +901,11 @@ static uint64_t ssd_write(struct ssd *ssd, NvmeRequest *req)
     }
 
     return maxlat;
+}
+
+static uint64_t ssd_write(struct ssd *ssd, NvmeRequest *req) {
+	uint64_t maxlat = ssd_write_helper(ssd, req);
+	return maxlat;
 }
 
 static void *ftl_thread(void *arg)

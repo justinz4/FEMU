@@ -2,10 +2,13 @@
 #define __FEMU_FTL_H
 
 #include "../nvme.h"
+#include "../fs/etd_fs.h"
 
 #define INVALID_PPA     (~(0ULL))
 #define INVALID_LPN     (~(0ULL))
 #define UNMAPPED_PPA    (~(0ULL))
+
+#define MAX_FILES 16
 
 enum {
     NAND_READ =  0,

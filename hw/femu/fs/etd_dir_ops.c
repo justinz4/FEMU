@@ -136,7 +136,7 @@ etd_int32_t new_dentry(const etd_uint8_t* fname) {
 	  root.dentries[i].file_type = ETD_FILE_TYPE_REGULAR;
 	  // Find a free inode
 	  for(j = 1; j < 30; ++j) {
-		if(!inode_base[j].length) break;
+		if(!etd_inode_base[j].length) break;
 	  }
 
 	  root.dentries[i].inode_num = j; // won't be len 0 for long
@@ -151,10 +151,10 @@ etd_int32_t remove_dentry(const etd_uint8_t* fname) {
   for(i = 0; i < ETD_MAX_FILES; ++i) {
 	if(!strncmp((char*)fname, (char*)root.dentries[i].filename, 32)) {
 	  // clear out inode
-	  for(j = 0; j < (inode_base[root.dentries[i].inode_num].length / ETD_FOUR_KB) + 1; ++j) {
-		data_block_bitmap[inode_base[root.dentries[i].inode_num].data_blocks[j]] = 0;
+	  for(j = 0; j < (etd_inode_base[root.dentries[i].inode_num].length / ETD_FOUR_KB) + 1; ++j) {
+		etd_data_block_bitmap[etd_inode_base[root.dentries[i].inode_num].data_blocks[j]] = 0;
 	  }
-	  inode_base[root.dentries[i].inode_num].length = 0;
+	  etd_inode_base[root.dentries[i].inode_num].length = 0;
 
 	  // clear dentry
 	  memset(root.dentries[i].filename, 0, 32);

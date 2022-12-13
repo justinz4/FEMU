@@ -19,18 +19,18 @@
 #define ETD_FILE_TYPE_REGULAR 2
 /* Note: these are used in check_valid_file_type */
 
-etd_inode_t* inode_base;		/* Physical addresss of first inode */
-etd_data_block_t* data_base; 	/* Physical address of first data block */ // hahahahahahaha (name)
-etd_fd_t* fd_table;				/* File descriptor table for tracking open files, is of size MAX_OPEN_FILES */
-etd_fd_t kernel_fd_table[ETD_MAX_OPEN_FILES]; /* Block of memory allocated for file descriptors in the kernel 
-											NOTE: on filesystem init, MUST set fd_table to this */
+//etd_inode_t* etd_inode_base;		/* Physical addresss of first inode */
+//etd_data_block_t* data_base; 	/* Physical address of first data block */ // hahahahahahaha (name)
+//etd_fd_t* fd_table;				/* File descriptor table for tracking open files, is of size MAX_OPEN_FILES */
+//etd_fd_t kernel_fd_table[ETD_MAX_OPEN_FILES]; /* Block of memory allocated for file descriptors in the kernel 
+//											NOTE: on filesystem init, MUST set fd_table to this */
 
 /* Boot block, which also acts as our root directory */
-etd_boot_block_t root;
+//etd_boot_block_t root;
 
 /* Bitmaps for filesystem contents */
-unsigned long long inode_bitmap;
-uint8_t data_block_bitmap[ETD_NUM_DATA_BLOCK_ADDR];
+//unsigned long long etd_inode_bitmap;
+//uint8_t etd_data_block_bitmap[ETD_NUM_DATA_BLOCK_ADDR];
 
 /* Initializes the filesystem using base_addr as the base 
  * 	physical address of the filesystem image in memory */

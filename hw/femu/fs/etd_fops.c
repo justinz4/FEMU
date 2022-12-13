@@ -38,20 +38,20 @@ etd_int32_t file_write(etd_int32_t fd, const void* buf, etd_int32_t nbytes) {
   etd_inode_t* curr_inode;
   etd_uint32_t data_block_count, data_addr, i, remaining_data, j;
 
-  curr_inode = &inode_base[fd_table[fd].inode_num];
+  curr_inode = &etd_inode_base[fd_table[fd].inode_num];
 
   if(curr_inode->length != 0) {
 	// (1) free all data blocks
 	data_block_count = (curr_inode->length / FOUR_KB) + 1;
 	for(i = 0; i < data_block_count; ++i) {
-	  data_block_bitmap[curr_inode->data_blocks[i]] = 0;
+	  etd_data_block_bitmap[curr_inode->data_blocks[i]] = 0;
 	}
   }
 
   curr_inode->length = nbytes;
   /*
   for(i = 15; i < NUM_DATA_BLOCK_ADDR; ++i) {
-	if(!data_block_bitmap[i]) break;
+	if(!etd_data_block_bitmap[i]) break;
   }
   curr_inode->data_blocks[0] = i;
 
@@ -63,7 +63,7 @@ etd_int32_t file_write(etd_int32_t fd, const void* buf, etd_int32_t nbytes) {
   remaining_data = nbytes;
   for(i = 0; i < data_block_count; ++i) {
 	for(j = 15; j < ETD_NUM_DATA_BLOCK_ADDR; ++j) {
-	  if(!data_block_bitmap[j]) break;
+	  if(!etd_data_block_bitmap[j]) break;
 	}
 	curr_inode->data_blocks[i] = j;
 	data_addr = &data_base[curr_inode->data_blocks[i]];
@@ -105,7 +105,7 @@ etd_int32_t file_read(etd_int32_t fd, void* buf, etd_int32_t nbytes) {
 etd_int32_t read_data(etd_uint32_t inode, etd_uint32_t offset, uint8_t* buf, etd_uint32_t length) {
     etd_int32_t block_num;
     etd_uint32_t num_bytes_read = 0;
-    etd_inode_t inode_block = inode_base[inode];
+    etd_inode_t inode_block = etd_inode_base[inode];
     void* current_block;
     const etd_int32_t LAST_BLOCK_MAX_OFFSET = inode_block.length % ETD_BLOCK_SIZE;
     const etd_int32_t NUM_BLOCKS = inode_block.length / ETD_BLOCK_SIZE + 

@@ -14,13 +14,13 @@ void filesystem_init(unsigned int base_addr) {
     root = *((etd_boot_block_t*)base_addr);
 
     /* Initialize where the inodes are found */
-    inode_base = (etd_inode_t*)(base_addr + ETD_BLOCK_SIZE);
+    etd_inode_base = (etd_inode_t*)(base_addr + ETD_BLOCK_SIZE);
 
 	/* Create bitmaps to allow file creation */
 	create_bitmaps();
 
 	/* Initialize the base address for where to find data blocks */
-    data_base = (etd_data_block_t*)(inode_base + root.num_inodes);
+    data_base = (etd_data_block_t*)(etd_inode_base + root.num_inodes);
     
     /* Set the current file descriptor table to one statically allocated in the kernel 
     	for file accesses while in the kernel */
@@ -39,13 +39,13 @@ void create_bitmaps() {
   etd_uint32_t i, j;
   for(i = 0; i < root.num_dir_entries; ++i) {
 	// Mark inodes as 'in use'
-	inode_bitmap |= (0x1 << root.dentries[i].inode_num);
-	printf("inode_bitmap %ll\n", inode_bitmap);
+	etd_inode_bitmap |= (0x1 << root.dentries[i].inode_num);
+	// printf("inode_bitmap %ll\n", inode_bitmap);
 	// Get inode
-	curr_inode = inode_base[root.dentries[i].inode_num];
+	curr_inode = etd_inode_base[root.dentries[i].inode_num];
 	for(j = 0; j < (curr_inode.length/ETD_FOUR_KB); ++j) {
 	  // Mark data blocks as 'in use'
-	  data_block_bitmap[curr_inode.data_blocks[j]] = 0xFF;
+	  etd_data_block_bitmap[curr_inode.data_blocks[j]] = 0xFF;
 	}
   }
 }
