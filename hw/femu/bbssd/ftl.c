@@ -463,11 +463,11 @@ static uint64_t ssd_fs_status(bool is_write) {
 	if(is_write) {
 		// need to do GC
 		// GC = page remapping -> multiple inode lookup -> how many things?
-		lat += (rand() % 1024) * NAND_READ_LATENCY;
+		lat += 1024 * NAND_READ_LATENCY;
 	}
 
 	// start at root dir, lookup dir
-	lat += (rand() % 35) * NAND_READ_LATENCY;
+	lat += 35 * NAND_READ_LATENCY;
 	// lookup inode in dir
 	lat += NAND_READ_LATENCY;
 	// lookup block in inodr
