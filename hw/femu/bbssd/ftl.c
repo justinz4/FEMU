@@ -461,12 +461,12 @@ static uint64_t ssd_fs_status(bool is_write) {
 	uint64_t lat = 0;
 
 	// when is file not open already
-	if((rand() % 100) / 100) {
-		lat += (rand() % 25) * NAND_READ_LATENCY;
+	if((rand() % 100) / 99) {
+		lat += (rand() % 10) * NAND_READ_LATENCY;
 
 	}
 
-	lat += NAND_READ_LATENCY;
+	lat += ((rand() % 60) / 59) * NAND_READ_LATENCY;
 
 	if(is_write) {
 		// need to do GC
