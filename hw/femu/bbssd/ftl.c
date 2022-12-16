@@ -462,13 +462,16 @@ static uint64_t ssd_fs_status(bool is_write) {
 
 	// when is file not open already
 	if((rand() % 100) / 100) {
-		lat += (rand() % 5) * NAND_READ_LATENCY;
+		lat += (rand() % 25) * NAND_READ_LATENCY;
 
 	}
+
+	lat += NAND_READ_LATENCY;
 
 	if(is_write) {
 		// need to do GC
 		// GC = page remapping -> multiple inode lookup -> how many things?
+		lat += NAND_READ_LATENCY;
 		lat += NAND_ERASE_LATENCY;
 	}
 
