@@ -460,21 +460,19 @@ static inline struct nand_page *get_pg(struct ssd *ssd, struct ppa *ppa)
 static uint64_t ssd_fs_status(bool is_write) {
 	uint64_t lat = 0;
 
+	// when is file not open already
+	if((rand() % 100) / 100) {
+		lat += (rand() % 5) * NAND_READ_LATENCY;
+
+	}
+
 	if(is_write) {
 		// need to do GC
 		// GC = page remapping -> multiple inode lookup -> how many things?
-		lat += 1024 * NAND_READ_LATENCY;
+		lat += NAND_ERASE_LATENCY;
 	}
 
-	// start at root dir, lookup dir
-	lat += 35 * NAND_READ_LATENCY;
-	// lookup inode in dir
-	lat += NAND_READ_LATENCY;
-	// lookup block in inodr
-	lat += (rand() % 5) * NAND_READ_LATENCY;
-
 	return lat;
-
 }
 
 static uint64_t ssd_advance_status(struct ssd *ssd, struct ppa *ppa, struct
@@ -487,6 +485,8 @@ static uint64_t ssd_advance_status(struct ssd *ssd, struct ppa *ppa, struct
     struct ssdparams *spp = &ssd->sp;
     struct nand_lun *lun = get_lun(ssd, ppa);
     uint64_t lat = 0;
+    printf("HERE in ssd_advance_status\n");
+    printf("c is %x\n", c);
 
     switch (c) {
     case NAND_READ:
@@ -829,6 +829,9 @@ static uint64_t ssd_read_helper(struct ssd *ssd, NvmeRequest *req)
         maxlat = (sublat > maxlat) ? sublat : maxlat;
     }
 
+    sublat = ssd_fs_status(0);
+    maxlat = (sublat > maxlat) ? sublat : maxlat;
+
     return maxlat;
 }
 
@@ -888,6 +891,9 @@ static uint64_t ssd_write_helper(struct ssd *ssd, NvmeRequest *req)
         curlat = ssd_advance_status(ssd, &ppa, &swr);
         maxlat = (curlat > maxlat) ? curlat : maxlat;
     }
+
+    curlat = ssd_fs_status(1);
+    maxlat = (curlat > maxlat) ? curlat : maxlat;
 
     return maxlat;
 }
